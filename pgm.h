@@ -43,7 +43,7 @@ struct P6
     }
 };
 
-std::ostream &operator<<(std::ostream &s, const P5 &img)
+inline std::ostream &operator<<(std::ostream &s, const P5 &img)
 {
     s << "P5\n";
     s << img.width << ' ' << img.height << "\n";
@@ -54,7 +54,7 @@ std::ostream &operator<<(std::ostream &s, const P5 &img)
     return s;
 }
 
-std::ostream &operator<<(std::ostream &s, const P6 &img)
+inline std::ostream &operator<<(std::ostream &s, const P6 &img)
 {
     s << "P6\n";
     s << img.width << ' ' << img.height << "\n";

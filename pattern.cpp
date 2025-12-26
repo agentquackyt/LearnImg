@@ -3,118 +3,96 @@
 #include <cstdint>
 #include <cmath>
 #include "pgm.h"
+#include "pattern.h"
 
-struct Pattern
+#include <cstring> // for std::memset
+
+// Implementations for Pattern declared in pattern.h
+Pattern::Pattern(int w, int h) : width(w), height(h)
 {
-    int width;
-    int height;
-    bool *data;
+    data = new bool[width * height];
+    std::memset(data, 0, width * height * sizeof(bool));
+}
 
+Pattern::Pattern(const Pattern& other) : width(other.width), height(other.height)
+{
+    data = new bool[width * height];
+    for (int i = 0; i < width * height; ++i) data[i] = other.data[i];
+}
 
-    Pattern(int w, int h) : width(w), height(h)
-    {
-        data = new bool[width * height];
-        for (int i = 0; i < width * height; ++i)
-        {
-            data[i] = false;
-        }
-    }
-
-    // Deep copy constructor
-    Pattern(const Pattern& other) : width(other.width), height(other.height)
-    {
-        data = new bool[width * height];
-        for (int i = 0; i < width * height; ++i)
-        {
-            data[i] = other.data[i];
-        }
-    }
-
-    // Deep copy assignment operator
-    Pattern& operator=(const Pattern& other)
-    {
-        if (this != &other)
-        {
-            delete[] data;
-            width = other.width;
-            height = other.height;
-            data = new bool[width * height];
-            for (int i = 0; i < width * height; ++i)
-            {
-                data[i] = other.data[i];
-            }
-        }
-        return *this;
-    }
-
-    ~Pattern()
-    {
+Pattern& Pattern::operator=(const Pattern& other)
+{
+    if (this != &other) {
         delete[] data;
+        width = other.width;
+        height = other.height;
+        data = new bool[width * height];
+        for (int i = 0; i < width * height; ++i) data[i] = other.data[i];
     }
+    return *this;
+}
 
-    Pattern operator&&(const Pattern &other) const
+Pattern::~Pattern() {
+    delete[] data;
+}
+
+Pattern Pattern::operator&&(const Pattern &other) const {
+    Pattern result(width, height);
+    for (int i = 0; i < width * height; ++i) result.data[i] = data[i] && other.data[i];
+    return result;
+}
+
+Pattern Pattern::operator||(const Pattern &other) const {
+    Pattern result(width, height);
+    for (int i = 0; i < width * height; ++i) result.data[i] = data[i] || other.data[i];
+    return result;
+}
+
+Pattern Pattern::operator!() const {
+    Pattern result(width, height);
+    for (int i = 0; i < width * height; ++i) result.data[i] = !data[i];
+    return result;
+}
+
+Pattern Pattern::operator^(const Pattern &other) const {
+    Pattern result(width, height);
+    for (int i = 0; i < width * height; ++i) result.data[i] = data[i] ^ other.data[i];
+    return result;
+}
+
+void Pattern::saveAsPgm(const char *filename) const {
+    P5 img(width, height);
+    for (int i = 0; i < width * height; ++i) img.img_data[i] = data[i] ? 255 : 0;
+    std::string out_path = std::string("./patterns/") + filename;
+    std::ofstream file(out_path.c_str(), std::ios::out | std::ios::binary);
+    if (!file) { std::cerr << "Failed to open " << out_path << " for writing\n"; return; }
+    file << img;
+    if (!file) std::cerr << "Failed while writing " << filename << "\n";
+}
+
+// Free function wrapper to save a Pattern (declared in pattern.h)
+void savePatternAsPgm(const Pattern &p, const char *filename)
+{
+    P5 img(p.width, p.height);
+    for (int i = 0; i < p.width * p.height; ++i)
     {
-        Pattern result(width, height);
-        for (int i = 0; i < width * height; ++i)
-        {
-            result.data[i] = data[i] && other.data[i];
-        }
-        return result;
+        img.img_data[i] = p.data[i] ? 255 : 0;
     }
 
-    Pattern operator||(const Pattern &other) const
+    std::string out_path = std::string("./patterns/") + filename;
+    std::ofstream file(out_path.c_str(), std::ios::out | std::ios::binary);
+    if (!file)
     {
-        Pattern result(width, height);
-        for (int i = 0; i < width * height; ++i)
-        {
-            result.data[i] = data[i] || other.data[i];
-        }
-        return result;
+        std::cerr << "Failed to open " << out_path << " for writing\n";
+        return;
     }
-    Pattern operator!() const
+
+    file << img;
+    if (!file)
     {
-        Pattern result(width, height);
-        for (int i = 0; i < width * height; ++i)
-        {
-            result.data[i] = !data[i];
-        }
-        return result;
+        std::cerr << "Failed while writing " << filename << "\n";
     }
-
-    // XOR
-    Pattern operator^(const Pattern &other) const
-    {
-        Pattern result(width, height);
-        for (int i = 0; i < width * height; ++i)
-        {
-            result.data[i] = data[i] ^ other.data[i];
-        }
-        return result;
-    }
-
-    void saveAsPgm(const char *filename) const
-    {
-        P5 img(width, height);
-        for (int i = 0; i < width * height; ++i)
-        {
-            img.img_data[i] = data[i] ? 255 : 0;
-        }
-
-        std::string out_path = std::string("./patterns/") + filename;
-        std::ofstream file(out_path.c_str(), std::ios::out | std::ios::binary);
-        if (!file)
-        {
-            std::cerr << "Failed to open " << out_path << " for writing\n";
-            return;
-        }
-
-        file << img;
-        if (!file)
-        {
-            std::cerr << "Failed while writing " << filename << "\n";
-        }
-    }
-};
+}
 
 Pattern generateCirclePattern(int width, int height, int radius)
 {
@@ -231,11 +209,62 @@ void patternMixer(Pattern r, Pattern g, Pattern b, int base_value, const char *f
         }
     }
 
-    std::ofstream file(filename, std::ios::out | std::ios::binary);
+    std::string out_path = std::string("./patterns/") + filename;
+    std::ofstream file(out_path.c_str(), std::ios::out | std::ios::binary);
+    if (!file) {
+        std::cerr << "Failed to open " << out_path << " for writing\n";
+        return;
+    }
     file << img;
 }
 
-Pattern labyrinthPatternGenerator(Pattern &basePattern, Pattern &visited, int x = 0, int y = 0)
+// Load a P5 PGM from the patterns folder and convert to a boolean Pattern (non-zero -> true)
+Pattern loadPatternFromPgm(const char *filename)
+{
+    std::string in_path = std::string("./patterns/") + filename;
+    std::ifstream file(in_path.c_str(), std::ios::in | std::ios::binary);
+    if (!file) {
+        std::cerr << "Failed to open " << in_path << " for reading\n";
+        return Pattern(1,1);
+    }
+
+    std::string magic;
+    file >> magic;
+    if (magic != "P5") {
+        std::cerr << "Unsupported magic: " << magic << " (expected P5)\n";
+        return Pattern(1,1);
+    }
+
+    // Skip comments and read width/height and maxval
+    int width=0, height=0, maxval=0;
+    while (file.peek() == '\n' || file.peek() == ' ' || file.peek() == '\r' || file.peek() == '\t') file.get();
+    while (file.peek() == '#') {
+        std::string line;
+        std::getline(file, line);
+    }
+    file >> width >> height;
+    file >> maxval;
+    file.get(); // skip single whitespace
+
+    if (width <= 0 || height <= 0) {
+        std::cerr << "Invalid dimensions in " << in_path << "\n";
+        return Pattern(1,1);
+    }
+
+    Pattern p(width, height);
+    std::vector<unsigned char> buffer(width * height);
+    file.read(reinterpret_cast<char*>(buffer.data()), width * height);
+    if (!file) {
+        std::cerr << "Failed while reading image data from " << in_path << "\n";
+        return Pattern(1,1);
+    }
+    for (int i = 0; i < width * height; ++i) {
+        p.data[i] = buffer[i] != 0;
+    }
+    return p;
+}
+
+Pattern labyrinthPatternGenerator(Pattern &basePattern, Pattern &visited, int x, int y)
 {
     visited.data[y * basePattern.width + x] = true;
     // Directions: up, right, down, left
@@ -259,30 +288,4 @@ Pattern labyrinthPatternGenerator(Pattern &basePattern, Pattern &visited, int x 
     return basePattern;
 }
 
-int main(int argc, char **argv)
-{
-    int width, height;
-    std::cout << "Pattern image generator\n";
-    std::cout << "=======================\n";
-    std::cout << "Width: "; std::cin >> width;
-    std::cout << "Height: "; std::cin >> height;
-
-    Pattern p1 = generateCirclePattern(width, height, width / 2 - 10);
-    Pattern p2 = generateTrianglePattern(width, height);
-    Pattern p3 = generateCheckerboardPattern(width, height, 16);
-
-    Pattern combined = (p1 || p3) && p2;
-    combined.saveAsPgm("combined_pattern.pgm");
-    patternMixer(p1, p2, p3, 255, (argc > 1) ? argv[1] : "pattern_mixer.ppm");
-
-    // Generate and save the 3D ball pattern (grayscale)
-    generate3DBallPgm(width, height, "3d_ball.pgm");
-    std::cout << "3D ball pattern saved as patterns/3d_ball.pgm\n";
-
-    // labyrinth pattern
-    Pattern labyrinthBase(width, height);
-    Pattern visited(width, height);
-    Pattern labyrinth = labyrinthPatternGenerator(labyrinthBase, visited);
-    labyrinth.saveAsPgm("labyrinth_pattern.pgm");
-    return 0;
-}
+// main() removed to avoid duplicate symbol error

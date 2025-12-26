@@ -44,11 +44,39 @@ This creates a color gradient circle and saves it as `gradient_circle.ppm` (or t
 ```
 You will be prompted for width and height. The program generates various patterns and saves them in the `patterns/` directory.
 
-#### 3. Example Output Files
+#### 3. Terminal GUI (ncurses) for layered generation
+A prompt-based terminal GUI (`./gui`) lets you build stacked layers of patterns, apply logical operators between them, preview, and export.
+
+- Launch the interactive GUI:
+```
+./gui
+```
+- Key commands (in the GUI):
+  - A: Add a layer (circle, triangle, checkerboard, load from `patterns/`, maze)
+  - E: Edit layer name
+  - D: Delete layer
+  - O: Set operator for a layer (AND, OR, XOR) — applied to this layer relative to the accumulated result
+  - N: Toggle NOT for a layer
+  - U/J: Move layer up/down in the stack
+  - P: Preview combined result (saves `./patterns/gui_preview.pgm`)
+  - X: Export: P5 (PGM) or P6 (PPM) (choose layers for R/G/B channels when exporting P6)
+  - W: Change default width/height for future layers
+
+#### 4. Example Output Files
 - `patterns/3d_ball.pgm`: 3D shaded ball
-- `patterns/combined_pattern.pgm`: Logical combination of patterns
-- `patterns/labyrinth_pattern.pgm`: Random labyrinth
+- `patterns/gui_preview.pgm`: Preview from the GUI
 - `patterns/pattern_mixer.ppm`: Color pattern mixer
+- `patterns/<your_export>.pgm/.ppm`: Files you export from the GUI
+
+### Customization
+- Modify `app.cpp` or `pattern.cpp` to experiment with different pattern parameters or add new image generation functions.
+
+### Requirements
+- Standard C++17 or later
+- ncurses for GUI (`-lncurses`)
+
+### License
+MIT License
 
 ### Customization
 - Modify `app.cpp` or `pattern.cpp` to experiment with different pattern parameters or add new image generation functions.
